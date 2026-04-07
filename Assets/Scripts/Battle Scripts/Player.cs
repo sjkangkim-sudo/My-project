@@ -13,7 +13,6 @@ public class Player : MonoBehaviour
     private bool isDashing = false;
     public bool canDash = true;
 
-    // [추가] 무적 상태를 체크하는 내부 변수
     private bool isInvincible = false;
 
     [Header("스킬 설정 (C키)")]
@@ -79,10 +78,9 @@ public class Player : MonoBehaviour
         }
     }
 
-    // [수정] 무적 상태라면 데미지를 입지 않도록 방어 로직 추가
     public void TakeDamage(int damage)
     {
-        if (isInvincible) return; // 무적 상태면 함수 탈출 (피격 무시)
+        if (isInvincible) return; 
 
         if (health != null) health.TakeDamage(damage);
     }
@@ -129,8 +127,7 @@ public class Player : MonoBehaviour
     void ThrowKnife()
     {
         if (knifePrefab == null || firePoint == null) return;
-
-        float angle = transform.localScale.x > 0 ? 0 : 180;
+        float angle = transform.localScale.x > 0 ? 180 : 0;
         Quaternion rotation = Quaternion.Euler(0, 0, angle);
         
         GameObject knife = Instantiate(knifePrefab, firePoint.position, rotation);
@@ -159,8 +156,7 @@ public class Player : MonoBehaviour
         canSkillC = false;
         isGrounded = false; 
         if (anim != null) anim.SetTrigger("doSkill"); 
-        
-        float dir = transform.localScale.x; 
+        float dir = transform.localScale.x * -1f; 
         rb.velocity = Vector2.zero; 
         rb.AddForce(new Vector2(dir * skillDashForce, skillJumpForce), ForceMode2D.Impulse); 
         
@@ -178,7 +174,7 @@ public class Player : MonoBehaviour
         canSkillC = true; 
     }
 
-    // --- 이동 --- //
+    // --- 이동 (AI용: 왼쪽 원본 스프라이트 기준) --- //
     void HandleMove() 
     { 
         float moveInput = 0; 
@@ -189,8 +185,8 @@ public class Player : MonoBehaviour
 
         if (anim != null) anim.SetBool("isWalking", moveInput != 0); 
         
-        if (moveInput > 0) transform.localScale = new Vector3(1, 1, 1); 
-        else if (moveInput < 0) transform.localScale = new Vector3(-1, 1, 1); 
+        if (moveInput > 0) transform.localScale = new Vector3(-1, 1, 1); 
+        else if (moveInput < 0) transform.localScale = new Vector3(1, 1, 1); 
     }
 
     // --- 점프 로직 --- //
@@ -209,7 +205,7 @@ public class Player : MonoBehaviour
     { 
         if (Input.GetKeyDown(KeyCode.DownArrow) && isGrounded && canDash) 
         { 
-            float dir = transform.localScale.x; 
+            float dir = transform.localScale.x * -1f; 
             StartCoroutine(DashRoutine(dir)); 
         } 
     }

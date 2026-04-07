@@ -7,7 +7,7 @@ public class Health : MonoBehaviour
     public int maxHealth = 3;
     public int currentHealth;
 
-    [Header("하트 오브젝트 (빨간 하트 3개를 순서대로 넣으세요)")]
+    [Header("하트 오브젝트 (자식 오브젝트를 드래그해서 넣으세요)")]
     public GameObject[] heartObjects;
 
     private SpriteRenderer spriteRenderer;
@@ -15,39 +15,40 @@ public class Health : MonoBehaviour
 
     void Start()
     {
+        ResetHealth();
+    }
+    public void ResetHealth()
+    {
         currentHealth = maxHealth;
+        isDead = false;
         spriteRenderer = GetComponent<SpriteRenderer>();
         UpdateHeartUI();
     }
 
+    public void HealFull()
+    {
+        ResetHealth();
+        Debug.Log(gameObject.name + " 체력 완전 회복!");
+    }
 
     public void TakeDamage(int damage)
     {
         if (isDead) return;
-
         currentHealth -= damage;
         if (currentHealth < 0) currentHealth = 0;
 
         UpdateHeartUI();
-
-   
         if (spriteRenderer != null) StartCoroutine(HitEffect());
-
-        Debug.Log($"{gameObject.name} 피격! 남은 하트: {currentHealth}");
-
         if (currentHealth <= 0) Die();
     }
 
-
     public void UpdateHeartUI()
     {
-        if (heartObjects == null || heartObjects.Length == 0) return;
-
+        if (heartObjects == null) return;
         for (int i = 0; i < heartObjects.Length; i++)
         {
             if (heartObjects[i] != null)
             {
-                
                 heartObjects[i].SetActive(i < currentHealth);
             }
         }
@@ -62,17 +63,12 @@ public class Health : MonoBehaviour
 
     void Die()
     {
+        if (isDead) return;
         isDead = true;
-        
-        // 플레이어라면 게임 오버 로그, 적이라면 파괴
-        if (gameObject.CompareTag("Player"))
+
+        if (!gameObject.CompareTag("Player"))
         {
-            Debug.Log("플레이어가 사망했습니다!");
-            // 여기에 리트라이 창 띄우는 코드 나중에 추가
-        }
-        else
-        {
-            Debug.Log("적이 사망했습니다!");
+            if (RoundManager.instance != null) RoundManager.instance.OnEnemyDeath();
             Destroy(gameObject);
         }
     }
