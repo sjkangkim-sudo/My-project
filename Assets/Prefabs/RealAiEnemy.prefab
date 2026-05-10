@@ -392,6 +392,7 @@ MonoBehaviour:
   jumpForce: 10
   obstacleCheck: {fileID: 2635390661650052108}
   checkDistance: 0.5
+  groundCheckDistance: 1.1
   groundLayer:
     serializedVersion: 2
     m_Bits: 128

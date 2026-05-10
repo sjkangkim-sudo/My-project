@@ -9,6 +9,12 @@ public class MainMenuManager : MonoBehaviour
         SceneManager.LoadScene("SubMenu"); 
     }
 
+    public void SettingGame()
+    {
+
+        SceneManager.LoadScene("Setting"); 
+    }
+
     public void QuitGame()
     {
         Application.Quit();

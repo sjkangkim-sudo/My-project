@@ -27,10 +27,10 @@ public class Weapon : MonoBehaviour
             Player player = collision.GetComponent<Player>();
             if (player != null)
             {
-                isHit = true; // 맞았음을 표시
+                isHit = true;
                 player.TakeDamage(damage);
                 Debug.Log("플레이어 피격! 데미지: " + damage);
-                Destroy(gameObject); // 즉시 삭제
+                Destroy(gameObject);
             }
         }
 
@@ -40,10 +40,10 @@ public class Weapon : MonoBehaviour
             Health targetHealth = collision.GetComponent<Health>();
             if (targetHealth != null)
             {
-                isHit = true; // 맞았음을 표시
+                isHit = true;
                 targetHealth.TakeDamage(damage);
                 Debug.Log("적 피격! 데미지: " + damage);
-                Destroy(gameObject); // 즉시 삭제
+                Destroy(gameObject);
             }
         }
 
