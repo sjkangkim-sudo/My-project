@@ -25,6 +25,10 @@ public class Player : MonoBehaviour
     private bool isUsingSkill = false;
     public bool canSkillC = true;
 
+    [Header("스킬 연출 설정")]
+    public GameObject shockwaveEffectPrefab; 
+    public Transform skillSpawnPoint; 
+
     [Header("스킬1 설정 (X키 - 칼 던지기)")]
     public GameObject knifePrefab;        
     public Transform firePoint;           
@@ -153,9 +157,13 @@ public class Player : MonoBehaviour
         isUsingSkill = true; 
         canSkillC = false;
         rb.velocity = Vector2.zero; 
+        
         if (anim != null) anim.SetTrigger("doSkill"); 
+        
         yield return new WaitForSeconds(0.2f); 
+        
         ExecuteShockwave(); 
+        
         yield return new WaitForSeconds(skillDuration);
         isUsingSkill = false; 
         yield return new WaitForSeconds(skillCDelay);
@@ -164,6 +172,26 @@ public class Player : MonoBehaviour
 
     void ExecuteShockwave()
     {
+        if (shockwaveEffectPrefab != null)
+        {
+            Vector3 spawnPos = transform.position;
+
+            if (skillSpawnPoint != null)
+            {
+                float direction = transform.localScale.x; 
+                float localOffsetX = skillSpawnPoint.localPosition.x;
+                float localOffsetY = skillSpawnPoint.localPosition.y;
+
+                spawnPos = new Vector3(
+                    transform.position.x + (localOffsetX * direction), 
+                    transform.position.y + localOffsetY, 
+                    transform.position.z
+                );
+            }
+
+            Instantiate(shockwaveEffectPrefab, spawnPos, Quaternion.identity);
+        }
+
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, shockwaveRange, enemyLayers);
         foreach (Collider2D enemy in hitEnemies)
         {
@@ -183,6 +211,7 @@ public class Player : MonoBehaviour
 
         rb.velocity = new Vector2(moveInput * walkSpeed, rb.velocity.y); 
         if (anim != null) anim.SetBool("isWalking", moveInput != 0); 
+        
         if (moveInput > 0) transform.localScale = new Vector3(-1, 1, 1); 
         else if (moveInput < 0) transform.localScale = new Vector3(1, 1, 1); 
     }
