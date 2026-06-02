@@ -146,16 +146,18 @@ public class Player : MonoBehaviour
         {
             anim.SetBool("isWalking", false);
             anim.SetInteger("comboCount", 0);
+            
+            // 애니메이터에 세팅한 doDie 트리거를 작동시킵니다!
+            anim.SetTrigger("doDie"); 
         }
-
-        Debug.Log($"💀 플레이어 사망! 모든 조작을 차단하고 '{deathCutsceneSceneName}' 씬으로 전환을 준비합니다.");
 
         StartCoroutine(PlayDeathCutsceneRoutine());
     }
 
     IEnumerator PlayDeathCutsceneRoutine()
     {
-        yield return new WaitForSeconds(0.5f);
+        // 사망 애니메이션이 끝까지 재생될 수 있도록 여유 있게 1.2초 대기 후 넘깁니다.
+        yield return new WaitForSeconds(1.2f);
 
         if (!string.IsNullOrEmpty(deathCutsceneSceneName))
         {
