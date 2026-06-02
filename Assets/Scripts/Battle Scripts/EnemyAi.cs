@@ -175,6 +175,8 @@ public class EnemyAI : MonoBehaviour
         
         if (knifePrefab != null && firePoint != null)
         {
+            if (SoundManager.instance != null) SoundManager.instance.PlayBossSkillX();
+
             float angle = transform.localScale.x > 0 ? 0 : 180;
             GameObject knife = Instantiate(knifePrefab, firePoint.position, Quaternion.Euler(0, 0, angle));
             Physics2D.IgnoreCollision(knife.GetComponent<Collider2D>(), GetComponent<Collider2D>());
@@ -192,6 +194,9 @@ public class EnemyAI : MonoBehaviour
         StopMovement();
 
         if (anim != null) anim.SetTrigger("doSkill"); 
+
+        // [수정 위치] 마왕이 C스킬 모션에 진입하자마자 다른 연출 간섭 없이 무조건 마왕 전용 지진 소리를 쾅 터뜨립니다.
+        if (SoundManager.instance != null) SoundManager.instance.PlayBossSkillC();
 
         yield return new WaitForSeconds(0.2f);
 
@@ -236,6 +241,8 @@ public class EnemyAI : MonoBehaviour
         lastDashTime = Time.time;
         isInvincible = true;
 
+        if (SoundManager.instance != null) SoundManager.instance.PlayBossDash();
+
         if (anim != null) anim.SetTrigger("doDash"); 
         if (sprite != null) sprite.color = new Color(1, 1, 1, 0.5f); 
 
@@ -261,6 +268,9 @@ public class EnemyAI : MonoBehaviour
         StopMovement();
         
         if (anim != null) anim.SetTrigger("doAttack"); 
+
+        if (SoundManager.instance != null) SoundManager.instance.PlayBossAttack();
+
         yield return new WaitForSeconds(0.4f); 
         ExecuteAttack();
         yield return new WaitForSeconds(0.4f); 

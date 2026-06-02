@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class BattleUI : MonoBehaviour
 {
@@ -15,22 +16,66 @@ public class BattleUI : MonoBehaviour
     public GameObject soundContent; 
     public GameObject keyContent;   
 
+    [Header("★ 배틀 시작 대사 사운드 등록")]
+    public AudioClip heroStartVoice; 
+    public AudioClip bossStartVoice; 
+
     public int currentRound = 1;
     private float elapsedTime = 0f;
     private bool isPaused = false;
 
     void Start()
     {
+        Time.timeScale = 1f; 
+
+        // [★ 핵심] 다시하기로 넘어왔을 때 Missing 난 선들을 하이어라키에서 이름으로 자동 검색해서 연결합니다!
+        if (roundText == null) roundText = GameObject.Find("RoundText")?.GetComponent<TextMeshProUGUI>();
+        if (timeText == null) timeText = GameObject.Find("TimeText")?.GetComponent<TextMeshProUGUI>();
+        
+        if (mainPauseMenu == null) mainPauseMenu = GameObject.Find("MainPauseMenu");
+        if (settingPanel == null) settingPanel = GameObject.Find("SettingPanel");
+        if (soundContent == null) soundContent = GameObject.Find("SoundContent");
+        if (keyContent == null) keyContent = GameObject.Find("KeyContent");
+
+        if (BattleDialogueManager.instance != null)
+        {
+            BattleDialogueManager.instance.ForceCloseDialogue();
+        }
+
         if (mainPauseMenu != null) mainPauseMenu.SetActive(false);
         if (settingPanel != null) settingPanel.SetActive(false);
+        isPaused = false;
+
+        StartCoroutine(StartBattleDialogueRoutine());
+    }
+
+    IEnumerator StartBattleDialogueRoutine()
+    {
+        yield return new WaitForSecondsRealtime(0.5f);
+        
+        if (BattleDialogueManager.instance != null)
+        {
+            BattleDialogueManager.instance.PlayDialogue("용사", "널 쓰러뜨리고 제국을 되찾겠다!", heroStartVoice);
+            BattleDialogueManager.instance.PlayDialogue("마왕", "한 번 해볼테면 해봐.", bossStartVoice);
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ 씬에 BattleDialogueManager가 없습니다! 대사 연출을 스킵합니다.");
+        }
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (isPaused) CloseAllMenus();
-            else OpenMainMenu();
+            if (isPaused) 
+            {
+                CloseAllMenus();
+            }
+            else 
+            {
+                OpenMainMenu();
+            }
         }
 
         if (!isPaused)
@@ -38,8 +83,17 @@ public class BattleUI : MonoBehaviour
             elapsedTime += Time.deltaTime;
             int minutes = Mathf.FloorToInt(elapsedTime / 60f);
             int seconds = Mathf.FloorToInt(elapsedTime % 60f);
-            timeText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            
+            if (timeText != null)
+            {
+                timeText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            }
         }
+    }
+
+    public void ClickReturnToBattleButton()
+    {
+        CloseAllMenus();
     }
 
     public void NextRound()
@@ -55,8 +109,9 @@ public class BattleUI : MonoBehaviour
         {
             mainPauseMenu.SetActive(true);
             if (settingPanel != null) settingPanel.SetActive(false);
+            
             isPaused = true;
-            Time.timeScale = 0f;
+            Time.timeScale = 0f; 
         }
     }
 
@@ -71,20 +126,16 @@ public class BattleUI : MonoBehaviour
         }
     }
 
-    // --- 조작키 탭 버튼에 연결할 함수 ---
     public void OpenKeyTab()
     {
         if (soundContent != null) soundContent.SetActive(false);
         if (keyContent != null) keyContent.SetActive(true);
-        Debug.Log("조작키 탭으로 변경!");
     }
 
-    // --- 소리 설정 탭 버튼에 연결할 함수 --- 
     public void OpenSoundTab()
     {
         if (soundContent != null) soundContent.SetActive(true);
         if (keyContent != null) keyContent.SetActive(false);
-        Debug.Log("소리 설정 탭으로 변경!");
     }
 
     public void CloseAllMenus()
@@ -93,6 +144,6 @@ public class BattleUI : MonoBehaviour
         if (settingPanel != null) settingPanel.SetActive(false);
         
         isPaused = false;
-        Time.timeScale = 1f;
+        Time.timeScale = 1f; 
     }
 }

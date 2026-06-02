@@ -6,7 +6,7 @@ public class SubMenuManager : MonoBehaviour
     public void PlayGame()
     {
 
-        SceneManager.LoadScene("Battle"); 
+        SceneManager.LoadScene("StoryCutscene1"); 
     }
 
     public void QuitGame()

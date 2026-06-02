@@ -1,84 +1,97 @@
-using UnityEngine;
 using System.Collections.Generic;
-using TMPro;
+using UnityEngine;
 
 public class KeyManager : MonoBehaviour
 {
     public static KeyManager instance;
-    [Header("현재 키 표시 텍스트 (직접 연결)")]
-    public TextMeshProUGUI leftKeyText;
-    public TextMeshProUGUI rightKeyText;
-    public TextMeshProUGUI jumpKeyText;
-    public TextMeshProUGUI dashKeyText;
-    public TextMeshProUGUI attackKeyText;
-    public TextMeshProUGUI skillCKeyText;
-    public TextMeshProUGUI skillXKeyText;
 
-    private string currentChangingKey = "";
-    private bool isWaiting = false;
 
     public Dictionary<string, KeyCode> keys = new Dictionary<string, KeyCode>();
 
+    [System.Serializable]
+    public struct KeyBind
+    {
+        public string actionName;
+        public KeyCode keyCode;
+    }
+
+    [Header("최초 기본 키 설정")]
+    public KeyBind[] defaultKeys;
+
     void Awake()
     {
-        keys["LEFT"] = KeyCode.LeftArrow;
-        keys["RIGHT"] = KeyCode.RightArrow;
-        keys["JUMP"] = KeyCode.UpArrow;
-        keys["DASH"] = KeyCode.DownArrow;
-        keys["ATTACK"] = KeyCode.Z;
-        keys["SKILL_C"] = KeyCode.C;
-        keys["SKILL_X"] = KeyCode.X;
-        
-        UpdateUI();
-    }
-
-    public void StartWaiting(string keyName)
-    {
-        Debug.Log(keyName + " 입력 대기 시작!"); 
-        currentChangingKey = keyName;
-        isWaiting = true;
-
-        UpdateTargetText(keyName, "???");
-    }
-
-    void OnGUI()
-    {
-        if (!isWaiting) return;
-
-        Event e = Event.current;
-        if (e.isKey && e.type == EventType.KeyDown)
+        if (instance == null)
         {
-            if (e.keyCode != KeyCode.None)
+            // 1. 메인메뉴에서 처음 태어난 진짜 원본 매니저 고정
+            instance = this;
+            
+            // 만약 하이어라키 최상위에 있다면 씬이 바뀌어도 파괴되지 않게 보호
+            if (transform.parent == null)
             {
-                keys[currentChangingKey] = e.keyCode;
-                Debug.Log(currentChangingKey + " 키가 " + e.keyCode + "로 변경됨!");
-                
-                isWaiting = false;
-                currentChangingKey = "";
-                UpdateUI();
+                DontDestroyOnLoad(gameObject);
+            }
+            
+            InitKeyDictionary();
+        }
+        else
+        {
+
+            instance.LoadKeySettings();
+            
+
+            if (transform.parent != null)
+            {
+                Destroy(this); // 스크립트만 제거
+            }
+            else
+            {
+                Destroy(gameObject); // 독립 오브젝트일 때만 오브젝트 파괴
+            }
+            return;
+        }
+    }
+
+
+    public void InitKeyDictionary()
+    {
+        keys.Clear();
+        foreach (KeyBind bind in defaultKeys)
+        {
+            if (string.IsNullOrEmpty(bind.actionName)) continue;
+
+            string savedKey = PlayerPrefs.GetString("Key_" + bind.actionName, bind.keyCode.ToString());
+            KeyCode finalKeyCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), savedKey);
+            
+            if (!keys.ContainsKey(bind.actionName))
+            {
+                keys.Add(bind.actionName, finalKeyCode);
             }
         }
     }
 
-    void UpdateUI()
+    // 다른 씬으로 넘어갔을 때 저장 장부를 새로고침하는 함수
+    public void LoadKeySettings()
     {
-        if (leftKeyText != null) leftKeyText.text = keys["LEFT"].ToString();
-        if (rightKeyText != null) rightKeyText.text = keys["RIGHT"].ToString();
-        if (jumpKeyText != null) jumpKeyText.text = keys["JUMP"].ToString();
-        if (dashKeyText != null) dashKeyText.text = keys["DASH"].ToString();
-        if (attackKeyText != null) attackKeyText.text = keys["ATTACK"].ToString();
-        if (skillCKeyText != null) skillCKeyText.text = keys["SKILL_C"].ToString();
-        if (skillXKeyText != null) skillXKeyText.text = keys["SKILL_X"].ToString();
-    }
+        // 만약 어떤 이유로 장부가 비어있다면 새로 채웁니다.
+        if (keys == null || keys.Count == 0)
+        {
+            InitKeyDictionary();
+            return;
+        }
 
-    void UpdateTargetText(string keyName, string value)
-    {
-        if (keyName == "LEFT" && leftKeyText != null) leftKeyText.text = value;
-        else if (keyName == "RIGHT" && rightKeyText != null) rightKeyText.text = value;
-        else if (keyName == "JUMP" && jumpKeyText != null) jumpKeyText.text = value;
-        else if (keyName == "DASH" && dashKeyText != null) dashKeyText.text = value;
-        else if (keyName == "ATTACK" && attackKeyText != null) attackKeyText.text = value;
-        else if (keyName == "SKILL_C" && skillCKeyText != null) skillCKeyText.text = value;
-        else if (keyName == "SKILL_X" && skillXKeyText != null) skillXKeyText.text = value;
+        foreach (KeyBind bind in defaultKeys)
+        {
+            if (string.IsNullOrEmpty(bind.actionName)) continue;
+
+            string savedKey = PlayerPrefs.GetString("Key_" + bind.actionName, bind.keyCode.ToString());
+            if (keys.ContainsKey(bind.actionName))
+            {
+                keys[bind.actionName] = (KeyCode)System.Enum.Parse(typeof(KeyCode), savedKey);
+            }
+            else
+            {
+                keys.Add(bind.actionName, (KeyCode)System.Enum.Parse(typeof(KeyCode), savedKey));
+            }
+        }
     }
 }

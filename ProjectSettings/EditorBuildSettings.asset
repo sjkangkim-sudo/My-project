@@ -9,12 +9,18 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: eccfd21167648ef48adb7554127b5677
   - enabled: 1
+    path: Assets/Scenes/Setting.unity
+    guid: a2e6a6c072ac43e4fb93ef1370c82713
+  - enabled: 1
     path: Assets/Scenes/SubMenu.unity
     guid: a74d4ab03a8ac4f449fa9f8465f0df6a
+  - enabled: 1
+    path: Assets/Scenes/Scene/StoryCutscene1.unity
+    guid: d7eaf57c940b5454b9996601fc1abaa7
   - enabled: 1
     path: Assets/Scenes/Battle.unity
     guid: 95ee6d3be20a6e74894ff6bc3c6a9afe
   - enabled: 1
-    path: Assets/Scenes/Setting.unity
-    guid: a2e6a6c072ac43e4fb93ef1370c82713
+    path: Assets/Scenes/Scene/GameOverScene.unity
+    guid: b958d43ac9bcc4d4c96b0ce62744ac5a
   m_configObjects: {}

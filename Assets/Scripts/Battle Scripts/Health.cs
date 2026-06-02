@@ -66,7 +66,23 @@ public class Health : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        if (!gameObject.CompareTag("Player"))
+        // 1. 이 오브젝트가 플레이어일 때 처리 구역
+        if (gameObject.CompareTag("Player"))
+        {
+            Debug.Log("🎯 플레이어 사망 감지! Player.Die() 함수를 호출합니다.");
+            
+            Player player = GetComponent<Player>();
+            if (player != null)
+            {
+                player.Die(); // Player.cs에 있는 사망 및 즉시 컷씬 켜기 함수 실행!
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ 오브젝트에 Player 스크립트 컴포넌트가 없습니다!");
+            }
+        }
+        // 2. 이 오브젝트가 적(Enemy)일 때 기존 로직 유지
+        else
         {
             if (RoundManager.instance != null) RoundManager.instance.OnEnemyDeath();
             Destroy(gameObject);

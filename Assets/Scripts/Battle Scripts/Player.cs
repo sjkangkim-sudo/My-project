@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement; 
 
 public class Player : MonoBehaviour
 {
@@ -57,20 +58,37 @@ public class Player : MonoBehaviour
     private SpriteRenderer sprite;
     private Animator anim;
 
+    [Header("사망 및 씬 전환 설정")]
+    private bool isDead = false;
+    public string deathCutsceneSceneName = "GameOverScene"; 
+
     void Start()
     {
+        isDead = false;
+
         rb = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
-        rb.gravityScale = 3.5f;
         health = GetComponent<Health>();
+
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.gravityScale = 3.5f;
+        }
+
         if (KeyManager.instance != null) keyManager = KeyManager.instance;
         else if (keyManager == null) keyManager = FindObjectOfType<KeyManager>();
+
+        if (keyManager != null) keyManager.InitKeyDictionary();
     }
 
     void Update()
     {
+        if (isDead) return;
         if (Time.timeScale == 0) return;
+        if (keyManager == null && KeyManager.instance == null) return;
+
         CheckGrounded();
 
         if (comboStep > 0 && Time.time - lastComboTime > comboWaitTime)
@@ -90,6 +108,19 @@ public class Player : MonoBehaviour
         }
     }
 
+    private KeyCode GetSafeKey(string actionName, KeyCode defaultKey)
+    {
+        if (keyManager == null) keyManager = KeyManager.instance ?? FindObjectOfType<KeyManager>();
+
+        if (keyManager != null && keyManager.keys != null && keyManager.keys.ContainsKey(actionName))
+        {
+            return keyManager.keys[actionName];
+        }
+
+        string savedKey = PlayerPrefs.GetString("Key_" + actionName, defaultKey.ToString());
+        return (KeyCode)System.Enum.Parse(typeof(KeyCode), savedKey);
+    }
+
     void CheckGrounded()
     {
         RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, groundLayer);
@@ -99,8 +130,41 @@ public class Player : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (isInvincible) return; 
+        if (isDead || isInvincible) return; 
         if (health != null) health.TakeDamage(damage);
+    }
+
+    public void Die()
+    {
+        if (isDead) return; 
+
+        isDead = true;
+        rb.velocity = Vector2.zero; 
+        rb.isKinematic = true;      
+
+        if (anim != null)
+        {
+            anim.SetBool("isWalking", false);
+            anim.SetInteger("comboCount", 0);
+        }
+
+        Debug.Log($"💀 플레이어 사망! 모든 조작을 차단하고 '{deathCutsceneSceneName}' 씬으로 전환을 준비합니다.");
+
+        StartCoroutine(PlayDeathCutsceneRoutine());
+    }
+
+    IEnumerator PlayDeathCutsceneRoutine()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        if (!string.IsNullOrEmpty(deathCutsceneSceneName))
+        {
+            SceneManager.LoadScene(deathCutsceneSceneName);
+        }
+        else
+        {
+            Debug.LogError("⚠️ 이동할 컷씬 씬 이름이 비어있습니다! Player 인스펙터창을 확인하세요.");
+        }
     }
 
     void ExecuteAttack()
@@ -115,7 +179,7 @@ public class Player : MonoBehaviour
 
     void HandleSkill1() 
     { 
-        if (keyManager != null && Input.GetKeyDown(keyManager.keys["SKILL_X"]) && isGrounded && canSkillX) 
+        if (Input.GetKeyDown(GetSafeKey("Skill_X", KeyCode.X)) && isGrounded && canSkillX) 
         {
             StartCoroutine(Skill1Routine()); 
         }
@@ -138,6 +202,9 @@ public class Player : MonoBehaviour
     void ThrowKnife()
     {
         if (knifePrefab == null || firePoint == null) return;
+
+        if (SoundManager.instance != null) SoundManager.instance.PlayPlayerSkillX();
+
         float angle = transform.localScale.x > 0 ? 180 : 0;
         Quaternion rotation = Quaternion.Euler(0, 0, angle);
         GameObject knife = Instantiate(knifePrefab, firePoint.position, rotation);
@@ -146,7 +213,7 @@ public class Player : MonoBehaviour
 
     void HandleSkill() 
     { 
-        if (keyManager != null && Input.GetKeyDown(keyManager.keys["SKILL_C"]) && isGrounded && canSkillC) 
+        if (Input.GetKeyDown(GetSafeKey("Skill_C", KeyCode.C)) && isGrounded && canSkillC) 
         {
             StartCoroutine(SkillRoutine()); 
         }
@@ -159,6 +226,8 @@ public class Player : MonoBehaviour
         rb.velocity = Vector2.zero; 
         
         if (anim != null) anim.SetTrigger("doSkill"); 
+
+        if (SoundManager.instance != null) SoundManager.instance.PlayPlayerSkillC();
         
         yield return new WaitForSeconds(0.2f); 
         
@@ -203,11 +272,9 @@ public class Player : MonoBehaviour
     void HandleMove() 
     { 
         float moveInput = 0; 
-        if (keyManager != null)
-        {
-            if (Input.GetKey(keyManager.keys["RIGHT"])) moveInput = 1f; 
-            else if (Input.GetKey(keyManager.keys["LEFT"])) moveInput = -1f; 
-        }
+        
+        if (Input.GetKey(GetSafeKey("Right", KeyCode.RightArrow))) moveInput = 1f; 
+        else if (Input.GetKey(GetSafeKey("Left", KeyCode.LeftArrow))) moveInput = -1f; 
 
         rb.velocity = new Vector2(moveInput * walkSpeed, rb.velocity.y); 
         if (anim != null) anim.SetBool("isWalking", moveInput != 0); 
@@ -218,7 +285,7 @@ public class Player : MonoBehaviour
 
     void HandleJump() 
     { 
-        if (keyManager != null && Input.GetKeyDown(keyManager.keys["JUMP"]) && isGrounded) 
+        if (Input.GetKeyDown(GetSafeKey("Jump", KeyCode.UpArrow)) && isGrounded) 
         { 
             rb.velocity = new Vector2(rb.velocity.x, jumpForce); 
             isGrounded = false; 
@@ -227,7 +294,7 @@ public class Player : MonoBehaviour
 
     void HandleDash() 
     { 
-        if (keyManager != null && Input.GetKeyDown(keyManager.keys["DASH"]) && isGrounded && canDash) 
+        if (Input.GetKeyDown(GetSafeKey("Dash", KeyCode.DownArrow)) && isGrounded && canDash) 
         { 
             float dir = transform.localScale.x * -1f; 
             StartCoroutine(DashRoutine(dir)); 
@@ -237,6 +304,9 @@ public class Player : MonoBehaviour
     IEnumerator DashRoutine(float direction) 
     { 
         isDashing = true; canDash = false; isInvincible = true;
+
+        if (SoundManager.instance != null) SoundManager.instance.PlayPlayerDash();
+
         if (anim != null) anim.SetTrigger("doDash"); 
         if (sprite != null) sprite.color = new Color(1, 1, 1, 0.5f);
         float originalGravity = rb.gravityScale; 
@@ -253,14 +323,23 @@ public class Player : MonoBehaviour
 
     void HandleCombat() 
     { 
-        if (keyManager != null && Input.GetKeyDown(keyManager.keys["ATTACK"])) 
+        if (Input.GetKeyDown(GetSafeKey("Attack", KeyCode.Z))) 
         { 
             lastComboTime = Time.time; 
-            if (!isGrounded) { if (anim != null) anim.SetTrigger("doJumpAttack"); } 
+            if (!isGrounded) 
+            { 
+                if (anim != null) anim.SetTrigger("doJumpAttack"); 
+                if (SoundManager.instance != null) SoundManager.instance.PlayPlayerAttack();
+            } 
             else 
             { 
                 comboStep++; if (comboStep > 2) comboStep = 1; 
-                if (anim != null) { anim.SetInteger("comboCount", comboStep); anim.SetTrigger("doAttack"); } 
+                if (anim != null) 
+                { 
+                    anim.SetInteger("comboCount", comboStep); 
+                    anim.SetTrigger("doAttack"); 
+                    if (SoundManager.instance != null) SoundManager.instance.PlayPlayerAttack();
+                } 
             } 
         } 
     }
